@@ -1,6 +1,6 @@
 from functools import wraps
 
-from flask import _app_ctx_stack, abort, request, make_response, jsonify, g
+from flask import _app_ctx_stack, abort, request, make_response, jsonify, g, session, flash, render_template
 from flask_awscognito.utils import extract_access_token, get_state
 from flask_awscognito.services import cognito_service_factory, token_service_factory
 from flask_awscognito.exceptions import FlaskAWSCognitoError, TokenVerifyError
@@ -13,6 +13,7 @@ from flask_awscognito.constants import (
     CONFIG_KEY_DOMAIN,
     CONFIG_KEY_REGION,
     CONFIG_KEY_POOL_CLIENT_SECRET,
+    ERROR_TEMPLATE,
 )
 
 
@@ -43,6 +44,7 @@ class AWSCognitoAuthentication:
         self.redirect_url = app.config[CONFIG_KEY_REDIRECT_URL]
         self.region = app.config[CONFIG_KEY_REGION]
         self.domain = app.config[CONFIG_KEY_DOMAIN]
+        self.template = app.config[ERROR_TEMPLATE]
 
     @property
     def token_service(self):
@@ -91,15 +93,25 @@ class AWSCognitoAuthentication:
         @wraps(view)
         def decorated(*args, **kwargs):
 
-            access_token = extract_access_token(request.headers)
+            access_token = session.get('access_token')
+            user = session.get('user')
+            if access_token is None:
+                access_token = extract_access_token(request.headers)
+            else:
+                user = session.get('user')
             try:
                 self.token_service.verify(access_token)
                 self.claims = self.token_service.claims
+                self.user = user
                 g.cognito_claims = self.claims
+                g.user = self.user
             except TokenVerifyError as e:
                 _ = request.data
-                abort(make_response(jsonify(message=str(e)), 401))
+                session.clear()
+                #abort(make_response(render_template(self.template)), 401)
+                return render_template(self.template, errorStr=str(e)), 401
 
             return view(*args, **kwargs)
 
         return decorated
+
