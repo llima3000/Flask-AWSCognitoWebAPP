@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/cgauge/Flask-AWSCognito.svg?branch=master)](https://travis-ci.org/cgauge/Flask-AWSCognito)
 [![Documentation Status](https://readthedocs.org/projects/flask-awscognito/badge/?version=latest)](https://flask-awscognito.readthedocs.io/en/latest/?badge=latest)
 
-# AWS Cognito for authentication in Flask
+# AWS Cognito for authentication in Flask using COOKIES to store the key
 
 Documentation https://flask-awscognito.readthedocs.io
 
